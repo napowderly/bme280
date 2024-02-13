@@ -1,2 +1,55 @@
-module Bme280:
-    signal gnd
+import SPI from "generics/interfaces.ato"
+import I2C from "generics/interfaces.ato"
+import Power from "generics/interfaces.ato"
+import Capacitor from "generics/capacitors.ato"
+
+component _BME280:
+    # component BME280
+    footprint = "LGA-8_BME280_BL"
+    lcsc_id = "C92489"
+    mpn = "C92489"
+    # pins
+    signal GND ~ pin 1
+    signal CSB ~ pin 2
+    signal SDI ~ pin 3
+    signal SCK ~ pin 4
+    signal SDO ~ pin 5
+    signal VDDIO ~ pin 6
+    GND ~ pin 7
+    signal VDD ~ pin 8
+
+
+module BME280:
+    """Pressure, temperature, and humidity sensor. This module can be used with either I2C or SPI. The address is 0x76 by default, but can be changed to 0x77 by connecting SDO to VDD."""
+    ic = new _BME280
+    spi = new SPI
+    i2c = new I2C
+    power = new Power
+
+    power.vcc ~ ic.VDD
+    power.vcc ~ ic.VDDIO
+    power.gnd ~ ic.GND
+
+    # spi interface
+    spi.miso ~ ic.SDO
+    spi.mosi ~ ic.SDI
+    spi.sck ~ ic.SCK
+    spi.cs ~ ic.CSB
+    spi.gnd ~ ic.GND
+
+    #i2c interface
+    i2c.sda ~ ic.SDI
+    i2c.scl ~ ic.SCK
+
+    #Configure for i2c or SPI
+    ic.CSB ~ power.vcc #comment out for SPI
+
+    # Address selection: (uncomment the address you want)
+    ic.SDO ~ power.gnd #0x76
+    # i2c.SDO ~ power.vcc #0x77
+
+    #Bypass cap
+    cap = new Capacitor
+    cap.value = 100nF +/- 20%
+    cap.package = "0402"
+    cap.power ~ power
